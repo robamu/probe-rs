@@ -58,6 +58,11 @@ pub struct BinaryDownloadOptions {
         help_heading = "PROBE CONFIGURATION"
     )]
     pub prefer_flash_algorithm: Vec<String>,
+
+    /// Skip the resetting of the chip before loading. This can be useful if there is other tooling
+    /// in place which performs the reset. It currently only works for RAM loading.
+    #[arg(long, help_heading = "DOWNLOAD CONFIGURATION")]
+    pub skip_reset: bool,
 }
 
 /// Supported bit-widths for read/write commands (not every device may support each width).
