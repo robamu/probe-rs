@@ -44,6 +44,10 @@ pub struct BinaryDownloadOptions {
     #[arg(long, help_heading = "DOWNLOAD CONFIGURATION")]
     pub chip_erase: bool,
 
+    /// Skip the resetting of the chip before loading. This can be useful if there is other tooling
+    /// in place which performs the reset before flashing. It currently only works for RAM flashing.
+    #[arg(long, help_heading = "DOWNLOAD CONFIGURATION")]
+    pub skip_pre_reset: bool,
     /// Whether to read the RTT output from the flash loader, if available.
     #[arg(long, help_heading = "DOWNLOAD CONFIGURATION")]
     pub read_flasher_rtt: bool,
@@ -61,7 +65,7 @@ pub struct BinaryDownloadOptions {
 
     /// Whether to reset the chip after downloading.
     #[arg(long, help_heading = "DOWNLOAD CONFIGURATION")]
-    pub reset: bool,
+    pub post_reset: bool,
 }
 
 /// Supported bit-widths for read/write commands (not every device may support each width).
