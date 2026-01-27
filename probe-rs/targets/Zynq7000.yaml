@@ -69,6 +69,8 @@ variants:
       cores:
         - core0
         - core1
+      memory_ports:
+        - ahb-ap
     - !Ram
       name: DDR
       range:
@@ -77,6 +79,8 @@ variants:
       cores:
         - core0
         - core1
+      memory_ports:
+        - ahb-ap
     - !Nvm
       name: QSPI
       range:
