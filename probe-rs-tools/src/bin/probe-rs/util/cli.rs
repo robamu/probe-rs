@@ -300,6 +300,10 @@ pub async fn rtt_client(
     if let Ok(opt_address) = find_rtt_control_block_in_raw_file(&elf) {
         match opt_address {
             Some(addr) => {
+                tracing::info!(
+                    "Detected RTT control block in ELF file at address {:#x}",
+                    addr
+                );
                 scan_regions = ScanRegion::Exact(addr);
                 load_defmt_data = true;
             }

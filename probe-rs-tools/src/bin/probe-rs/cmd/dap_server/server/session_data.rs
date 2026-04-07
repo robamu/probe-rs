@@ -279,6 +279,10 @@ impl SessionData {
                         .map_err(|error| anyhow!("Error attempting to attach to RTT: {error}"))?;
 
                     if let Ok(Some(addr)) = find_rtt_control_block_in_raw_file(&elf) {
+                        tracing::info!(
+                            "Detected RTT control block in ELF file at address {:#x}",
+                            addr
+                        );
                         ScanRegion::Exact(addr)
                     } else {
                         // Do not scan the memory for the control block.
