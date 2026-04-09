@@ -1,4 +1,4 @@
-//! Support for the Vorago VA416xx device family.
+//! Support for the Vorago VA108xx device family.
 use std::{sync::Arc, thread, time::Duration};
 
 use probe_rs_target::CoreType;
@@ -6,51 +6,26 @@ use probe_rs_target::CoreType;
 use crate::{
     MemoryMappedRegister,
     architecture::arm::{
-        ArmDebugInterface, ArmError, FullyQualifiedApAddress,
-        armv7m::Demcr,
-        memory::ArmMemoryInterface,
-        sequences::{ArmDebugSequence, cortex_m_core_start},
+        ArmError, armv7m::Demcr, memory::ArmMemoryInterface, sequences::ArmDebugSequence,
     },
 };
 
 /// Marker structure for the VA416xx device
 #[derive(Debug)]
-pub struct Va416xx;
+pub struct Va108xx;
 
-impl Va416xx {
+impl Va108xx {
     /// Create the sequencer
     pub fn create() -> Arc<Self> {
         Arc::new(Self)
     }
 }
 
-impl ArmDebugSequence for Va416xx {
-    /// Custom VA416xx core debug start sequence.
+impl ArmDebugSequence for Va108xx {
+    /// Custom reset sequence for the VA108xx chip.
     ///
-    /// This function performs the regular Cortex-M debug core start sequence in addition to
-    /// disabling the ROM protection and the watchdog.
-    fn debug_core_start(
-        &self,
-        interface: &mut dyn ArmDebugInterface,
-        core_ap: &FullyQualifiedApAddress,
-        _core_type: CoreType,
-        _debug_base: Option<u64>,
-        _cti_base: Option<u64>,
-    ) -> Result<(), ArmError> {
-        tracing::debug!("VA416xx custom debug core start");
-        let mut core = interface.memory_interface(core_ap)?;
-        cortex_m_core_start(&mut *core)?;
-        // Disable ROM protection
-        core.write_32(0x4001_0010, &[0x000_0001])?;
-        // Disable watchdog
-        // WDOGLOCK = 0x1ACCE551
-        core.write_32(0x400210C0, &[0x1ACCE551])?;
-        // WDOGCONTROL = 0x0 (disable)
-        core.write_32(0x40021008, &[0])?;
-        Ok(())
-    }
-
-    /// Resetting the VA416XX breaks the debug connection.
+    /// This chip has behaved weirdly on resets. It has a similar boot architecture
+    /// to VA416xx and this custom reset sequence has solved those issues.
     ///
     /// This custom implementation is similar to the
     /// [crate::vendor::ti::sequences::cc13xx_cc26xx::CC13xxCC26xx::reset_system] implementation
@@ -61,8 +36,8 @@ impl ArmDebugSequence for Va416xx {
         core_type: CoreType,
         debug_base: Option<u64>,
     ) -> Result<(), ArmError> {
-        use crate::architecture::arm::core::armv7m::{Aircr, Dhcsr};
-        tracing::debug!("VA416xx custom reset sequence");
+        tracing::debug!("VA108xx custom reset sequence");
+        use crate::architecture::arm::core::armv6m::{Aircr, Dhcsr};
         // Check if the previous code requested a halt before reset
         let demcr = Demcr(interface.read_word_32(Demcr::get_mmio_address())?);
 
