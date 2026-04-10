@@ -1,3 +1,9 @@
+# Special note on the VA108xx target: This target allows flashing the NVM, but doing a soft reset
+# with a tool like `probe-rs` will only perform a soft reset where the code already running in RAM
+# is reset. 
+#
+# If you want to immediately run the code flashed to the NVM, you can flash a binary which issues
+# the system reset, and then attach with probe-rs.
 name: VA108xx Series
 generated_from_pack: true
 pack_file_release: 1.4.0
