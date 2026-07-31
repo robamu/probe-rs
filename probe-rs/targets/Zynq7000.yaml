@@ -32,20 +32,20 @@ manufacturer:
 variants:
 - name: X7Z
   cores:
-    - name: core0
-      type: armv7a
-      core_access_options: !Arm
-        ap: !v1 1
-        debug_base: 0x80090000
-        cti_base: 0x80098000
-        jtag_tap: 1
-    - name: core1
-      type: armv7a
-      core_access_options: !Arm
-        ap: !v1 1
-        debug_base: 0x80092000
-        cti_base: 0x80099000
-        jtag_tap: 1
+  - name: core0
+    type: armv7a
+    core_access_options: !Arm
+      ap: !v1 1
+      debug_base: 0x80090000
+      cti_base: 0x80098000
+      jtag_tap: 1
+  - name: core1
+    type: armv7a
+    core_access_options: !Arm
+      ap: !v1 1
+      debug_base: 0x80092000
+      cti_base: 0x80099000
+      jtag_tap: 1
   memory_ports:
     - name: ahb-ap
       memory_port_options: !Arm
