@@ -50,6 +50,8 @@ fn run_flash_download_inner(
     options.disable_double_buffering = download_options.disable_double_buffering;
     options.verify = download_options.verify;
     options.preverify = download_options.preverify;
+    options.skip_reset = download_options.skip_pre_reset;
+    options.disable_progressbars = download_options.disable_progressbars;
 
     let pb = if download_options.disable_progressbars {
         None
@@ -147,6 +149,7 @@ impl ProgressBars {
                 Operation::Fill => "Reading flash",
                 Operation::Program => "Programming",
                 Operation::Verify => "Verifying",
+                Operation::Ram => "Writing RAM",
             };
             ProgressBarGroup::new(format!("{message:>13}"))
         })

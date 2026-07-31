@@ -7,7 +7,7 @@ use probe_rs_target::{
 use std::io::{Read, Seek};
 use std::ops::Range;
 use std::sync::LazyLock;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use yaml_serde::Value;
 
 use super::builder::FlashBuilder;
@@ -724,11 +724,10 @@ impl FlashLoader {
         tracing::debug!("Committing RAM!");
 
         if let BootInfo::FromRam { cores_to_reset, .. } = self.boot_info() {
-            // If we are booting from RAM, it is important to reset and halt to guarantee a clear state
-            // Normally, flash algorithm loader performs reset and halt - does not happen here.
-            tracing::debug!(
-                " -- action: vector table in RAM, assuming RAM boot, resetting and halting"
-            );
+            // If we are booting from RAM, it might be important to reset and halt to guarantee a
+            // clear state. Normally, flash algorithm loader performs reset and halt - does note
+            // happen here. The user can optionally disable the reset, and the core is only
+            // halted in that case.
             for (core_to_reset_index, _) in session
                 .target()
                 .cores
@@ -739,13 +738,33 @@ impl FlashLoader {
             {
                 session
                     .core(core_to_reset_index)
-                    .and_then(|mut core| core.reset_and_halt(Duration::from_millis(500)))
+                    .and_then(|mut core| {
+                        if options.skip_reset {
+                            tracing::debug!(
+                                " -- action: vector table in RAM, assuming RAM boot, halting"
+                            );
+                            core.halt(Duration::from_millis(500))
+                        } else {
+                            tracing::debug!(
+                                " -- action: vector table in RAM, assuming RAM boot, resetting and halting"
+                            );
+                            core.reset_and_halt(Duration::from_millis(500))
+                        }
+                    })
                     .map_err(FlashError::Core)?;
             }
         }
 
+        // Chunk size used to report progress while writing RAM. Writing the whole
+        // range in one call would work just as well, but gives no feedback on
+        // large (multi-megabyte) RAM downloads, which can take a long time on slow probes.
+        const RAM_WRITE_CHUNK_SIZE: usize = 4 * 1024;
+
+        let mut ram_progress_started = false;
+        let mut ram_write_result = Ok(());
+
         // Commit RAM last, because NVM flashing overwrites RAM
-        for region in self
+        'ram_regions: for region in self
             .memory_map
             .iter()
             .filter_map(MemoryRegion::as_ram_region)
@@ -793,10 +812,45 @@ impl FlashLoader {
                     address + data.len() as u64,
                     data.len()
                 );
-                // Write data to memory.
-                core.write(address, data).map_err(FlashError::Core)?;
+
+                if options.disable_progressbars {
+                    // No progress to report, so skip the chunking overhead and write in one go.
+                    if let Err(error) = core.write(address, data) {
+                        ram_write_result = Err(FlashError::Core(error));
+                        break 'ram_regions;
+                    }
+                    continue;
+                }
+
+                for (chunk_index, chunk) in data.chunks(RAM_WRITE_CHUNK_SIZE).enumerate() {
+                    if !ram_progress_started {
+                        options.progress.started(ProgressOperation::Ram);
+                        ram_progress_started = true;
+                    }
+
+                    let chunk_address = address + (chunk_index * RAM_WRITE_CHUNK_SIZE) as u64;
+
+                    let start = Instant::now();
+                    // Write data to memory.
+                    if let Err(error) = core.write(chunk_address, chunk) {
+                        ram_write_result = Err(FlashError::Core(error));
+                        break 'ram_regions;
+                    }
+                    options
+                        .progress
+                        .progressed(ProgressOperation::Ram, chunk.len() as u64, start.elapsed());
+                }
             }
         }
+
+        if ram_progress_started {
+            match ram_write_result {
+                Ok(()) => options.progress.finished(ProgressOperation::Ram),
+                Err(_) => options.progress.failed(ProgressOperation::Ram),
+            }
+        }
+
+        ram_write_result?;
 
         if options.verify {
             self.verify_ram(session)?;
@@ -976,6 +1030,20 @@ impl FlashLoader {
             }
 
             phases.push(phase_layout);
+        }
+
+        let ram_size: u64 = self
+            .memory_map
+            .iter()
+            .filter_map(MemoryRegion::as_ram_region)
+            .flat_map(|region| self.builder.data_in_range(&region.range))
+            .map(|(_, data)| data.len() as u64)
+            .sum();
+
+        if ram_size > 0 && !options.disable_progressbars {
+            options
+                .progress
+                .add_progress_bar(ProgressOperation::Ram, Some(ram_size));
         }
 
         options.progress.initialized(phases);

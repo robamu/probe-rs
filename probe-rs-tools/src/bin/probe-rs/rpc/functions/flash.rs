@@ -36,11 +36,18 @@ pub struct DownloadOptions {
     pub skip_erase: bool,
     /// After flashing, read back all the flashed data to verify it has been written correctly.
     pub verify: bool,
+    /// Skip resetting and halting the processor cores. This can be useful if there is other
+    /// tooling in place which performs this task before flashing. It currently only works for RAM
+    /// flashing.
+    pub skip_reset: bool,
     /// Disable double buffering when loading flash.
     pub disable_double_buffering: bool,
     /// If there are multiple valid flash algorithms for a memory region, this list allows
     /// overriding the default selection.
     pub preferred_algos: Vec<String>,
+    /// Skip fine-grained progress reporting. Enable this if progress bars are disabled anyway,
+    /// to avoid the bookkeeping overhead.
+    pub disable_progressbars: bool,
 }
 
 impl DownloadOptions {
@@ -122,6 +129,8 @@ impl FlashRequest {
         options.verify = self.options.verify;
         options.disable_double_buffering = self.options.disable_double_buffering;
         options.preferred_algos = self.options.preferred_algos.clone();
+        options.skip_reset = self.options.skip_reset;
+        options.disable_progressbars = self.options.disable_progressbars;
 
         options
     }
@@ -226,6 +235,9 @@ pub enum Operation {
 
     /// Checking flash contents.
     Verify,
+
+    /// Writing data directly to RAM.
+    Ram,
 }
 
 impl From<flashing::ProgressOperation> for Operation {
@@ -235,6 +247,7 @@ impl From<flashing::ProgressOperation> for Operation {
             flashing::ProgressOperation::Erase => Operation::Erase,
             flashing::ProgressOperation::Program => Operation::Program,
             flashing::ProgressOperation::Verify => Operation::Verify,
+            flashing::ProgressOperation::Ram => Operation::Ram,
         }
     }
 }

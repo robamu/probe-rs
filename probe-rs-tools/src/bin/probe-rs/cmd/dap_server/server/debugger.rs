@@ -856,6 +856,7 @@ impl Debugger {
             Operation::Erase => "Erasing Sectors",
             Operation::Program => "Programming Pages",
             Operation::Verify => "Verifying",
+            Operation::Ram => "Writing RAM",
         };
 
         let result = {

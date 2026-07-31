@@ -133,9 +133,16 @@ pub struct DownloadOptions<'p> {
     pub verify: bool,
     /// Disable double buffering when loading flash.
     pub disable_double_buffering: bool,
+    /// Skip the resetting of the chip. This can be useful if there is other tooling in place which
+    /// performs this task before flashing. It currently only works for RAM flashing.
+    pub skip_reset: bool,
     /// If there are multiple valid flash algorithms for a memory region, this list allows
     /// overriding the default selection.
     pub preferred_algos: Vec<String>,
+    /// Skip fine-grained progress reporting (e.g. reporting RAM writes in small chunks so
+    /// progress can be displayed). Enable this if progress is not going to be displayed anyway,
+    /// to avoid the bookkeeping overhead.
+    pub disable_progressbars: bool,
 }
 
 impl DownloadOptions<'_> {

@@ -819,6 +819,9 @@ impl RpcBackend {
                 verify: config.verify_after_flashing,
                 disable_double_buffering: false,
                 preferred_algos: Vec::new(),
+                // TODO: Add this option to the config?
+                skip_reset: false,
+                disable_progressbars: false,
             };
 
             session
