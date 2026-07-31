@@ -572,7 +572,7 @@ fn read_c_string(core: &mut impl RttAccess, ptr: NonZeroU64) -> Result<Option<St
 
     let mut bytes;
 
-    if core.target().memory_map.is_empty() {
+    if core.memory_regions().count() == 0 {
         // We read byte by byte if target is a generic target without memory_map item
         bytes = Vec::with_capacity(128);
 
