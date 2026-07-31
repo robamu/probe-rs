@@ -39,7 +39,8 @@ use crate::{
             FlashEndpoint, GetRttChannelsEndpoint, HandleSemihostingEndpoint,
             ListChipFamiliesEndpoint, ListProbesEndpoint, ListTestsEndpoint,
             LoadChipFamilyEndpoint, LoadDebugInfoEndpoint, LoadSvdEndpoint, MonitorEndpoint,
-            PollRttUpEndpoint, ProgressEventTopic, ReadBytesEndpoint, ReadMemory8Endpoint,
+            PollRttUpEndpoint, PrepareRamBootEndpoint, ProgressEventTopic, ReadBytesEndpoint,
+            ReadMemory8Endpoint,
             ReadMemory16Endpoint, ReadMemory32Endpoint, ReadMemory64Endpoint,
             ResetCoreAndHaltEndpoint, ResetCoreEndpoint, ResolveSourceBreakpointsEndpoint,
             ResolveSourceLocationsEndpoint, ResumeAllCoresEndpoint, RpcError, RpcResult,
@@ -71,7 +72,7 @@ use crate::{
             file::{AppendFileRequest, TempFile},
             flash::{
                 BootInfo, BuildRequest, BuildResult, DownloadOptions, EraseCommand, EraseRequest,
-                FlashRequest, ProgressEvent, VerifyRequest, VerifyResult,
+                FlashRequest, PrepareRamBootRequest, ProgressEvent, VerifyRequest, VerifyResult,
             },
             info::{
                 InfoEvent, TargetInfoRequest, TargetMetadataRequest, WireSessionTargetMetadata,
@@ -647,6 +648,19 @@ impl SessionInterface {
                 },
                 on_msg,
             )
+            .await
+    }
+
+    /// Performs the RAM flash start sequence (pointing PC/SP at the loaded vector table) if
+    /// `boot_info` indicates the image was loaded into RAM. Does nothing, and does not reset the
+    /// core, for images that boot conventionally (e.g. from flash).
+    pub async fn prepare_ram_boot(&self, boot_info: BootInfo, core: usize) -> anyhow::Result<()> {
+        self.client
+            .send_resp::<PrepareRamBootEndpoint, _>(&PrepareRamBootRequest {
+                sessid: self.sessid,
+                boot_info,
+                core: core as u32,
+            })
             .await
     }
 

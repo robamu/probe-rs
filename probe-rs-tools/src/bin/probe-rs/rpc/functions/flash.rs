@@ -352,6 +352,20 @@ impl BootInfo {
 
         Ok(())
     }
+
+    /// Performs the RAM flash start sequence (pointing PC/SP at the loaded vector table) if the
+    /// image was loaded into RAM. Does nothing for images that boot conventionally (e.g. from
+    /// flash), so unlike [`BootInfo::prepare`] this never resets the core.
+    pub fn prepare_ram_boot(&self, session: &mut Session, core_id: usize) -> anyhow::Result<()> {
+        if let BootInfo::FromRam {
+            vector_table_addr, ..
+        } = self
+        {
+            session.prepare_running_on_ram(*vector_table_addr, core_id)?;
+        }
+
+        Ok(())
+    }
 }
 
 impl From<probe_rs::flashing::BootInfo> for BootInfo {
@@ -404,6 +418,30 @@ fn flash_impl(
         .commit(&mut session, options)
         .map_err(FileDownloadError::Flash)?;
 
+    Ok(())
+}
+
+#[derive(Serialize, Deserialize, Schema)]
+pub struct PrepareRamBootRequest {
+    pub sessid: Key<Session>,
+    pub boot_info: BootInfo,
+    pub core: u32,
+}
+
+pub async fn prepare_ram_boot(
+    ctx: &mut RpcContext,
+    _header: VarHeader,
+    request: PrepareRamBootRequest,
+) -> NoResponse {
+    tracing::warn!(
+        "prepare_ram_boot request received: boot_info={:?}, core={}",
+        request.boot_info,
+        request.core
+    );
+    let mut session = ctx.session(request.sessid).await;
+    request
+        .boot_info
+        .prepare_ram_boot(&mut session, request.core as usize)?;
     Ok(())
 }
 

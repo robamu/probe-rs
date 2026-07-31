@@ -501,9 +501,16 @@ pub async fn flash(
         _ = visualizer.write_svg(visualizer_output);
     }
 
-    if download_options.reset {
-        let core = session.core(0);
-        core.reset().await?;
+    if download_options.run {
+        tracing::warn!("download_options.run: boot_info = {:?}", loader.boot_info);
+        // For images loaded into RAM, the RAM flash start sequence must run first to point
+        // PC/SP at the loaded vector table. Flash-booted images need no preparation and are
+        // left untouched so the core is not reset.
+        if matches!(loader.boot_info, BootInfo::FromRam { .. }) {
+            tracing::warn!("issuing prepare_ram_boot request");
+            session.prepare_ram_boot(loader.boot_info.clone(), 0).await?;
+        }
+        session.core(0).run().await?;
     }
 
     logging::eprintln(format!(

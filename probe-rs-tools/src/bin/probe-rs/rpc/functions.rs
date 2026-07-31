@@ -35,8 +35,9 @@ use crate::{
             },
             disassemble::{DisassembleRequest, disassemble as disassemble_handler},
             flash::{
-                BuildRequest, BuildResponse, EraseRequest, FlashRequest, ProgressEvent,
-                VerifyRequest, VerifyResponse, build, erase, flash, verify,
+                BuildRequest, BuildResponse, EraseRequest, FlashRequest, PrepareRamBootRequest,
+                ProgressEvent, VerifyRequest, VerifyResponse, build, erase, flash,
+                prepare_ram_boot, verify,
             },
             info::{
                 InfoEvent, TargetInfoRequest, TargetMetadataRequest, target_info, target_metadata,
@@ -605,6 +606,7 @@ endpoints! {
     | ResumeAllCoresEndpoint    | ResumeAllCoresRequest   | NoResponse              | "resume"           |
     | BuildEndpoint             | BuildRequest            | BuildResponse           | "flash/build"      |
     | FlashEndpoint             | FlashRequest            | NoResponse              | "flash/flash"      |
+    | PrepareRamBootEndpoint    | PrepareRamBootRequest   | NoResponse              | "flash/prepare_ram_boot" |
     | EraseEndpoint             | EraseRequest            | NoResponse              | "flash/erase"      |
     | VerifyEndpoint            | VerifyRequest           | VerifyResponse          | "flash/verify"     |
     | MonitorEndpoint           | MonitorRequest          | MonitorResponse         | "monitor"          |
@@ -722,6 +724,7 @@ postcard_rpc::define_dispatch! {
         | DisassembleEndpoint              | async | disassemble_handler        |
         | BuildEndpoint                    | async | build                      |
         | FlashEndpoint                    | async | flash                      |
+        | PrepareRamBootEndpoint           | async | prepare_ram_boot           |
         | EraseEndpoint                    | async | erase                      |
         | VerifyEndpoint                   | async | verify                     |
         | MonitorEndpoint                  | spawn | monitor                    |
