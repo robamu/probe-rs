@@ -139,6 +139,10 @@ pub struct DownloadOptions<'p> {
     /// If there are multiple valid flash algorithms for a memory region, this list allows
     /// overriding the default selection.
     pub preferred_algos: Vec<String>,
+    /// Skip fine-grained progress reporting (e.g. reporting RAM writes in small chunks so
+    /// progress can be displayed). Enable this if progress is not going to be displayed anyway,
+    /// to avoid the bookkeeping overhead.
+    pub disable_progressbars: bool,
 }
 
 impl DownloadOptions<'_> {

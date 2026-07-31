@@ -821,6 +821,7 @@ impl RpcBackend {
                 preferred_algos: Vec::new(),
                 // TODO: Add this option to the config?
                 skip_reset: false,
+                disable_progressbars: false,
             };
 
             session
