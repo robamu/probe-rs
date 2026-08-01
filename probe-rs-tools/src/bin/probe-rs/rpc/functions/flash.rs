@@ -45,6 +45,8 @@ pub struct DownloadOptions {
     /// If there are multiple valid flash algorithms for a memory region, this list allows
     /// overriding the default selection.
     pub preferred_algos: Vec<String>,
+    /// RAM chunk size relevant for loading into RAM. `None` disables the chunking.
+    pub ram_chunk_size: Option<u64>,
 }
 
 impl DownloadOptions {
@@ -127,6 +129,7 @@ impl FlashRequest {
         options.disable_double_buffering = self.options.disable_double_buffering;
         options.preferred_algos = self.options.preferred_algos.clone();
         options.skip_reset = self.options.skip_reset;
+        options.ram_chunk_size = self.options.ram_chunk_size;
 
         options
     }
@@ -231,6 +234,9 @@ pub enum Operation {
 
     /// Checking flash contents.
     Verify,
+
+    /// Writing data directly to RAM.
+    Ram,
 }
 
 impl From<flashing::ProgressOperation> for Operation {
@@ -240,6 +246,7 @@ impl From<flashing::ProgressOperation> for Operation {
             flashing::ProgressOperation::Erase => Operation::Erase,
             flashing::ProgressOperation::Program => Operation::Program,
             flashing::ProgressOperation::Verify => Operation::Verify,
+            flashing::ProgressOperation::Ram => Operation::Ram,
         }
     }
 }
